@@ -1,18 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_KEY!,
-  { auth: { persistSession: false } }
-)
-
-const CRAWLER_API_URL   = process.env.CRAWLER_API_URL   || ''
-const ADMIN_API_SECRET  = process.env.ADMIN_API_SECRET  || ''
-const ADMIN_EMAILS      = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim())
-
 export async function POST(req: NextRequest) {
-  // Auth: only admin can trigger crawls
+  const CRAWLER_API_URL  = process.env.CRAWLER_API_URL  || ''
+  const ADMIN_API_SECRET = process.env.ADMIN_API_SECRET || ''
+  const ADMIN_EMAILS     = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim())
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_KEY!,
+    { auth: { persistSession: false } }
+  )
+
   const { createServerSupabaseClient } = await import('@/lib/supabase-server')
   const serverClient = createServerSupabaseClient()
   const { data: { user } } = await serverClient.auth.getUser()
