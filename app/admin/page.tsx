@@ -1,13 +1,12 @@
 export const dynamic = 'force-dynamic'
 import { createClient } from '@supabase/supabase-js'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_KEY!,
-  { auth: { persistSession: false } }
-)
-
 async function getMetrics() {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_KEY!,
+    { auth: { persistSession: false } }
+  )
   const [businesses, sites, outreach, subscriptions] = await Promise.all([
     supabase.from('businesses').select('id', { count: 'exact', head: true }),
     supabase.from('websites').select('id, plan, status', { count: 'exact' }),

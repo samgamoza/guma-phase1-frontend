@@ -3,12 +3,6 @@ import { createClient } from '@supabase/supabase-js'
 import Link from 'next/link'
 import { Globe, ExternalLink, Mail, Trash2 } from 'lucide-react'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_KEY!,
-  { auth: { persistSession: false } }
-)
-
 const STATUS_COLORS: Record<string, string> = {
   generated: 'bg-indigo-muted text-indigo',
   claimed:   'bg-amber-50 text-amber-600',
@@ -21,6 +15,11 @@ export default async function AdminSitesPage({
 }: {
   searchParams: { page?: string; q?: string; status?: string; industry?: string }
 }) {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_KEY!,
+    { auth: { persistSession: false } }
+  )
   const page     = parseInt(searchParams.page || '1')
   const q        = searchParams.q || ''
   const status   = searchParams.status || ''

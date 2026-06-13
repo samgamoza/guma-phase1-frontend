@@ -2,13 +2,12 @@ export const dynamic = 'force-dynamic'
 import { createClient } from '@supabase/supabase-js'
 import { ArrowRight, Globe2, Zap, Mail, Key, CreditCard, TrendingUp, AlertTriangle } from 'lucide-react'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_KEY!,
-  { auth: { persistSession: false } }
-)
-
 export default async function AdminPipelinePage() {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_KEY!,
+    { auth: { persistSession: false } }
+  )
   const [busResult, siteResult, outreachResult, subResult] = await Promise.all([
     supabase.from('businesses').select('id', { count: 'exact' }).limit(1),
     supabase.from('websites').select('id, status, created_at', { count: 'exact' }).order('created_at', { ascending: false }).limit(20),
