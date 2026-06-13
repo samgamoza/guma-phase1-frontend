@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
 
 export async function POST(req: NextRequest) {
   const CRAWLER_API_URL  = process.env.CRAWLER_API_URL  || ''
@@ -11,12 +10,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_KEY!,
-    { auth: { persistSession: false } }
-  )
-
   const formData = await req.formData()
   const city     = (formData.get('city')     as string) || 'Austin'
   const state    = (formData.get('state')    as string) || 'TX'
@@ -24,42 +17,31 @@ export async function POST(req: NextRequest) {
   const limit    = parseInt((formData.get('limit') as string) || '100')
   const maxPages = Math.ceil(limit / 20) // ~20 results per YP page
 
+  const back = (params: Record<string, string>) => {
+    const url = new URL('/admin/crawler', req.url)
+    Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v))
+    return NextResponse.redirect(url, 303)
+  }
+
+  // The crawler service owns the crawl_jobs record and the BullMQ queue.
+  if (!CRAWLER_API_URL) {
+    return back({ error: 'CRAWLER_API_URL not set — deploy the crawler service first.' })
+  }
+
   try {
-    // Always write a tracking record to Supabase
-    const { data: dbJob, error: dbErr } = await supabase
-      .from('crawl_jobs')
-      .insert({
-        city,
-        state,
-        industry,
-        status: 'pending',
-      })
-      .select()
-      .single()
+    const res = await fetch(`${CRAWLER_API_URL}/jobs`, {
+      method:  'POST',
+      headers: {
+        'Content-Type':   'application/json',
+        'x-admin-secret': ADMIN_API_SECRET,
+      },
+      body: JSON.stringify({ category: industry, city, state, maxPages }),
+    })
+    const result = await res.json().catch(() => ({}))
+    if (!res.ok) throw new Error(result.error || `Crawler service error (${res.status})`)
 
-    if (dbErr) throw new Error(dbErr.message)
-
-    // If the crawler service is deployed, delegate to it
-    if (CRAWLER_API_URL) {
-      const res = await fetch(`${CRAWLER_API_URL}/jobs`, {
-        method:  'POST',
-        headers: {
-          'Content-Type':    'application/json',
-          'x-admin-secret':  ADMIN_API_SECRET,
-        },
-        body: JSON.stringify({ category: industry, city, state, maxPages }),
-      })
-      const result = await res.json()
-      if (!res.ok) throw new Error(result.error || 'Crawler service error')
-    }
-
-    // Redirect back to crawler admin page with success
-    const url = new URL('/admin/crawler', req.url)
-    url.searchParams.set('success', '1')
-    return NextResponse.redirect(url, 303)
+    return back({ success: '1' })
   } catch (err: any) {
-    const url = new URL('/admin/crawler', req.url)
-    url.searchParams.set('error', err.message)
-    return NextResponse.redirect(url, 303)
+    return back({ error: `Could not reach crawler service: ${err.message}` })
   }
 }

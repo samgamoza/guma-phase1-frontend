@@ -152,7 +152,7 @@ export default async function AdminCrawlerPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-warm-gray-100 bg-warm-gray-50">
-                {['City', 'Industry', 'Status', 'Found', 'Duration', 'Started'].map(h => (
+                {['Region', 'Category', 'Status', 'Found', 'Processed', 'Started'].map(h => (
                   <th key={h} className="text-left px-4 py-3 text-xs font-medium text-warm-gray-400">{h}</th>
                 ))}
               </tr>
@@ -160,25 +160,23 @@ export default async function AdminCrawlerPage() {
             <tbody className="divide-y divide-warm-gray-50">
               {jobs.map((job: any) => (
                 <tr key={job.id} className="hover:bg-warm-gray-50 transition-colors">
-                  <td className="px-4 py-3 font-medium text-ink">{job.city || '—'}</td>
-                  <td className="px-4 py-3 text-warm-gray-500 text-xs">{job.industry || 'All'}</td>
+                  <td className="px-4 py-3 font-medium text-ink">{job.region || '—'}</td>
+                  <td className="px-4 py-3 text-warm-gray-500 text-xs">{job.category || 'All'}</td>
                   <td className="px-4 py-3">
                     <span className={`badge text-[10px] flex items-center gap-1 w-fit ${
-                      job.status === 'completed' ? 'bg-mint/15 text-emerald-700'
+                      job.status === 'done' ? 'bg-mint/15 text-emerald-700'
                       : job.status === 'running' ? 'bg-indigo-muted text-indigo'
                       : job.status === 'failed' ? 'bg-red-50 text-red-600'
                       : 'bg-warm-gray-100 text-warm-gray-500'
                     }`}>
-                      {job.status === 'completed' && <CheckCircle2 className="w-3 h-3" />}
+                      {job.status === 'done' && <CheckCircle2 className="w-3 h-3" />}
                       {job.status === 'failed' && <XCircle className="w-3 h-3" />}
                       {job.status === 'running' && <Clock className="w-3 h-3" />}
                       {job.status}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-warm-gray-500">{job.businesses_found ?? '—'}</td>
-                  <td className="px-4 py-3 text-warm-gray-400 text-xs">
-                    {job.duration_ms ? `${(job.duration_ms / 1000).toFixed(1)}s` : '—'}
-                  </td>
+                  <td className="px-4 py-3 text-warm-gray-500">{job.found ?? '—'}</td>
+                  <td className="px-4 py-3 text-warm-gray-400 text-xs">{job.processed ?? '—'}</td>
                   <td className="px-4 py-3 text-xs text-warm-gray-400">
                     {job.created_at ? new Date(job.created_at).toLocaleString() : '—'}
                   </td>
