@@ -29,10 +29,10 @@ export default async function AdminSitesPage({
   let query = supabase
     .from('websites')
     .select(
-      'id, status, subdomain, created_at, claimed_at, businesses(name, city, category, email)',
+      'id, status, slug, generated_at, claimed_at, businesses(name, city, category, email)',
       { count: 'exact' }
     )
-    .order('created_at', { ascending: false })
+    .order('generated_at', { ascending: false })
     .range((page - 1) * PAGE, page * PAGE - 1)
 
   if (status) query = query.eq('status', status)
@@ -92,7 +92,7 @@ export default async function AdminSitesPage({
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-warm-gray-100 bg-warm-gray-50">
-              {['Business', 'City', 'Industry', 'Subdomain', 'Status', 'Claimed', 'Created', 'Actions'].map(h => (
+              {['Business', 'City', 'Industry', 'Site URL', 'Status', 'Claimed', 'Generated', 'Actions'].map(h => (
                 <th key={h} className="text-left px-4 py-3 text-xs font-medium text-warm-gray-400">{h}</th>
               ))}
             </tr>
@@ -118,7 +118,7 @@ export default async function AdminSitesPage({
                   )}
                 </td>
                 <td className="px-4 py-3 text-xs font-mono text-warm-gray-500">
-                  {site.subdomain ? `${site.subdomain}.guma.ai` : '—'}
+                  {site.slug ? `/sites/${site.slug}` : '—'}
                 </td>
                 <td className="px-4 py-3">
                   <span className={`badge text-[10px] ${STATUS_COLORS[site.status] || 'bg-warm-gray-100 text-warm-gray-400'}`}>
@@ -129,13 +129,13 @@ export default async function AdminSitesPage({
                   {site.claimed_at ? new Date(site.claimed_at).toLocaleDateString() : '—'}
                 </td>
                 <td className="px-4 py-3 text-xs text-warm-gray-400">
-                  {new Date(site.created_at).toLocaleDateString()}
+                  {site.generated_at ? new Date(site.generated_at).toLocaleDateString() : '—'}
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-1">
-                    {site.subdomain && (
+                    {site.slug && (
                       <a
-                        href={`https://${site.subdomain}.guma.ai`}
+                        href={`/sites/${site.slug}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="btn-ghost text-xs p-1.5"

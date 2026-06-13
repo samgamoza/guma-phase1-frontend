@@ -19,8 +19,8 @@ export default async function AdminBusinessesPage({
 
   let query = supabase
     .from('businesses')
-    .select('id, name, category, city, phone, email, has_website, source_dir, crawled_at, websites(status)', { count: 'exact' })
-    .order('crawled_at', { ascending: false })
+    .select('id, name, category, city, phone, email, has_website, source_dir, created_at, websites(status)', { count: 'exact' })
+    .order('created_at', { ascending: false })
     .range((page - 1) * PAGE, page * PAGE - 1)
 
   if (q) query = query.ilike('name', `%${q}%`)
@@ -82,7 +82,7 @@ export default async function AdminBusinessesPage({
                     )}
                   </td>
                   <td className="px-4 py-3 text-xs text-warm-gray-400">
-                    {new Date(b.crawled_at).toLocaleDateString()}
+                    {new Date(b.created_at).toLocaleDateString()}
                   </td>
                 </tr>
               )

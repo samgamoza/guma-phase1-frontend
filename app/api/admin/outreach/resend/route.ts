@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
   // Load website + business
   const { data: site } = await supabase
     .from('websites')
-    .select('id, slug, subdomain, businesses(name, city, category, email)')
+    .select('id, slug, business_id, businesses(name, city, category, email)')
     .eq('id', websiteId)
     .single()
 
@@ -36,15 +36,16 @@ export async function POST(req: NextRequest) {
   const { data: outreach } = await supabase
     .from('outreach')
     .upsert({
-      website_id: websiteId,
-      email:      biz.email,
-      status:     'pending',
+      website_id:  websiteId,
+      business_id: (site as any).business_id,
+      to_email:    biz.email,
+      status:      'pending',
     }, { onConflict: 'website_id' })
     .select()
     .single()
 
   const outreachId = (outreach as any)?.id || websiteId
-  const slug       = (site as any).slug || (site as any).subdomain || websiteId
+  const slug       = (site as any).slug || websiteId
   const siteUrl    = `${SITE_BASE}/sites/${slug}`
   const claimUrl   = `${SITE_BASE}/claim/${slug}`
 

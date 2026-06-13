@@ -10,7 +10,7 @@ export default async function AdminPipelinePage() {
   )
   const [busResult, siteResult, outreachResult, subResult] = await Promise.all([
     supabase.from('businesses').select('id', { count: 'exact' }).limit(1),
-    supabase.from('websites').select('id, status, created_at', { count: 'exact' }).order('created_at', { ascending: false }).limit(20),
+    supabase.from('websites').select('id, status, generated_at', { count: 'exact' }).order('generated_at', { ascending: false }).limit(20),
     supabase.from('outreach').select('id, status, sent_at', { count: 'exact' }).order('sent_at', { ascending: false }).limit(20),
     supabase.from('subscriptions').select('id, plan, created_at', { count: 'exact' }).order('created_at', { ascending: false }).limit(20),
   ])

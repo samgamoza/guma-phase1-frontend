@@ -11,13 +11,13 @@ export default async function AdminGeneratorPage() {
   const [websiteResult, businessResult, genJobResult] = await Promise.all([
     supabase
       .from('websites')
-      .select('id, status, created_at, business_id, generation_time_ms, error_message')
-      .order('created_at', { ascending: false })
+      .select('id, status, generated_at, business_id')
+      .order('generated_at', { ascending: false })
       .limit(200),
     supabase
       .from('businesses')
       .select('id')
-      .is('websites', null)
+      .eq('site_generated', false)
       .limit(1000),
     supabase
       .from('generation_jobs')

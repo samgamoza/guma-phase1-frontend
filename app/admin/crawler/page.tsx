@@ -11,8 +11,8 @@ export default async function AdminCrawlerPage() {
   const [busResult, jobResult] = await Promise.all([
     supabase
       .from('businesses')
-      .select('id, city, category, crawled_at, source_dir')
-      .order('crawled_at', { ascending: false })
+      .select('id, city, category, created_at, source_dir')
+      .order('created_at', { ascending: false })
       .limit(200),
     supabase
       .from('crawl_jobs')
