@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'
 import { createClient } from '@supabase/supabase-js'
 import { Zap, Play, RefreshCw, CheckCircle2, XCircle, Clock, AlertTriangle } from 'lucide-react'
 

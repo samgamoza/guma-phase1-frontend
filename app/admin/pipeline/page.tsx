@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'
 import { createClient } from '@supabase/supabase-js'
 import { ArrowRight, Globe2, Zap, Mail, Key, CreditCard, TrendingUp, AlertTriangle } from 'lucide-react'
 

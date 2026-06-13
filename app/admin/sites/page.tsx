@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'
 import { createClient } from '@supabase/supabase-js'
 import Link from 'next/link'
 import { Globe, ExternalLink, Mail, Trash2 } from 'lucide-react'
