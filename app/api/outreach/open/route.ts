@@ -1,17 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_KEY!,
-  { auth: { persistSession: false } }
-)
-
 // Tracking pixel — called when email is opened (1x1 transparent GIF)
 export async function GET(request: NextRequest) {
   const oid = request.nextUrl.searchParams.get('oid')
 
   if (oid) {
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_KEY!,
+      { auth: { persistSession: false } }
+    )
     await supabase
       .from('outreach')
       .update({ status: 'opened', opened_at: new Date().toISOString() })
