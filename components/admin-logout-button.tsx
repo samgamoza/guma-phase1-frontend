@@ -11,7 +11,7 @@ export default function AdminLogoutButton() {
   const handleLogout = async () => {
     setLoading(true)
     await fetch('/api/admin/logout', { method: 'POST' })
-    router.push('/admin/login')
+    router.push('/admin-login')
   }
 
   return (

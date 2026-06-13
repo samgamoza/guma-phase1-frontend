@@ -6,7 +6,7 @@ export function requireAdminSession() {
   const sessionCookie = cookieStore.get('admin_session')
 
   if (!sessionCookie?.value) {
-    redirect('/admin/login')
+    redirect('/admin-login')
   }
 
   return true
