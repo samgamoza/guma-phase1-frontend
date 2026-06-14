@@ -14,8 +14,9 @@ export async function POST(req: NextRequest) {
   const city     = (formData.get('city')     as string) || 'Austin'
   const state    = (formData.get('state')    as string) || 'TX'
   const industry = (formData.get('industry') as string) || 'Restaurants'
+  const source   = (formData.get('source')   as string) || 'yellowpages'
   const limit    = parseInt((formData.get('limit') as string) || '100')
-  const maxPages = Math.ceil(limit / 20) // ~20 results per YP page
+  const maxPages = Math.ceil(limit / 20)
 
   const back = (params: Record<string, string>) => {
     const url = new URL('/admin/crawler', req.url)
@@ -35,7 +36,7 @@ export async function POST(req: NextRequest) {
         'Content-Type':   'application/json',
         'x-admin-secret': ADMIN_API_SECRET,
       },
-      body: JSON.stringify({ category: industry, city, state, maxPages }),
+      body: JSON.stringify({ category: industry, city, state, maxPages, source }),
     })
     const result = await res.json().catch(() => ({}))
     if (!res.ok) throw new Error(result.error || `Crawler service error (${res.status})`)

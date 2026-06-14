@@ -75,6 +75,13 @@ export default async function AdminCrawlerPage() {
           </h2>
           <form action="/api/admin/crawler/start" method="POST" className="space-y-4">
             <div>
+              <label className="block text-xs font-medium text-warm-gray-500 mb-1">Source</label>
+              <select name="source" className="input w-full text-sm">
+                <option value="yellowpages">YellowPages (Playwright)</option>
+                <option value="googleplaces">Google Places API</option>
+              </select>
+            </div>
+            <div>
               <label className="block text-xs font-medium text-warm-gray-500 mb-1">City</label>
               <input
                 name="city"
