@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Zap, LayoutDashboard, Building2, Globe, Globe2, Mail, TrendingUp, LogOut } from 'lucide-react'
+import { Zap, LayoutDashboard, Building2, Globe, Globe2, Mail, TrendingUp, LogOut, Database } from 'lucide-react'
 import { requireAdminSession } from '@/lib/admin-auth'
 import AdminLogoutButton from '@/components/admin-logout-button'
 
@@ -11,6 +11,7 @@ const NAV = [
   { href: '/admin/businesses', icon: Building2,       label: 'Businesses' },
   { href: '/admin/sites',      icon: Globe,           label: 'Sites' },
   { href: '/admin/outreach',   icon: Mail,            label: 'Outreach' },
+  { href: '/admin/data',       icon: Database,        label: 'Data Import' },
 ]
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
