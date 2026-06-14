@@ -80,6 +80,8 @@ export default async function AdminCrawlerPage() {
                 <option value="yellowpages">YellowPages (Playwright)</option>
                 <option value="googleplaces">Google Places API</option>
                 <option value="serper">Serper.dev (Google Maps)</option>
+                <option value="apify">Apify (Cloud Actor)</option>
+                <option value="brightdata">Bright Data (Dataset API)</option>
               </select>
             </div>
             <div>
