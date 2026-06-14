@@ -79,6 +79,7 @@ export default async function AdminCrawlerPage() {
               <select name="source" className="input w-full text-sm">
                 <option value="yellowpages">YellowPages (Playwright)</option>
                 <option value="googleplaces">Google Places API</option>
+                <option value="serper">Serper.dev (Google Maps)</option>
               </select>
             </div>
             <div>
