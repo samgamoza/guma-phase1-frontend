@@ -1,0 +1,83 @@
+# Guma AI — local development stack
+# Runs: crawler + generator + outreach workers + Redis
+# Frontend runs separately via: cd guma-frontend && npm run dev
+
+services:
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  crawler-worker:
+    build:
+      context: ./guma-phase1-crawler
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    command: node src/queue/worker.js
+    depends_on:
+      redis:
+        condition: service_healthy
+    env_file: ./guma-phase1-crawler/.env
+    environment:
+      - REDIS_URL=redis://redis:6379
+    volumes:
+      - ./guma-phase1-crawler/logs:/app/logs
+    deploy:
+      resources:
+        limits:
+          memory: 1g   # Playwright needs headroom
+
+  generator-worker:
+    build:
+      context: ./guma-phase1-generator
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    command: node src/queue/worker.js
+    depends_on:
+      redis:
+        condition: service_healthy
+    env_file: ./guma-phase1-generator/.env
+    environment:
+      - REDIS_URL=redis://redis:6379
+    volumes:
+      - ./guma-phase1-generator/logs:/app/logs
+
+  outreach-worker:
+    build:
+      context: ./guma-phase1-outreach
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    command: node src/queue/worker.js
+    depends_on:
+      redis:
+        condition: service_healthy
+    env_file: ./guma-phase1-outreach/.env
+    environment:
+      - REDIS_URL=redis://redis:6379
+    volumes:
+      - ./guma-phase1-outreach/logs:/app/logs
+
+  # Optional: BullMQ dashboard for queue monitoring
+  bull-board:
+    image: deadly0/bull-board
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    depends_on:
+      - redis
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - BULL_PREFIX=bull
+
+volumes:
+  redis_data:

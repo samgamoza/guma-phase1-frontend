@@ -1,0 +1,7 @@
+FROM node:20-slim
+WORKDIR /app
+COPY package.json .
+RUN npm install --omit=dev
+COPY . .
+RUN mkdir -p logs
+CMD ["node", "src/queue/worker.js"]
