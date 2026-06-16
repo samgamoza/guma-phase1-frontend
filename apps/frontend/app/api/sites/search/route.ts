@@ -93,6 +93,7 @@ async function searchNominatim(q: string, city: string): Promise<any[]> {
         name: item.name || item.display_name?.split(',')[0] || q,
         category: resolveCategory([item.type || '', item.class || '']),
         city: addr.city || addr.town || addr.village || addr.county || city || '',
+        country: addr.country_code?.toUpperCase() || null,
         phone: extratags.phone || extratags['contact:phone'] || '',
         address: [addr.road, addr.house_number, addr.city || addr.town].filter(Boolean).join(', '),
         source: 'nominatim',
@@ -105,6 +106,23 @@ async function searchNominatim(q: string, city: string): Promise<any[]> {
     })
   } catch {
     return []
+  }
+}
+
+// ─── Trigger Site Generation ─────────────────────────────────────────────────
+
+async function triggerGeneration(businessId: string): Promise<void> {
+  const generatorUrl = process.env.GENERATOR_API_URL
+  if (!generatorUrl) return // generator not wired up in this env — skip silently
+  try {
+    await fetch(`${generatorUrl}/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.GENERATOR_API_KEY || '' },
+      body: JSON.stringify({ businessId }),
+      signal: AbortSignal.timeout(3000),
+    })
+  } catch {
+    // Fire-and-forget — don't block the search response
   }
 }
 
@@ -159,7 +177,7 @@ async function upsertLiveResults(liveResults: any[]): Promise<any[]> {
           phone: r.phone || null,
           address: r.address || null,
           city: r.city || null,
-          country: 'PH',
+          country: r.country || null,
           source_dir: r.source || 'web_search',
           has_website: false,
           raw_data: { source: r.source, description: r.description, lat: r.lat, lon: r.lon },
@@ -168,6 +186,9 @@ async function upsertLiveResults(liveResults: any[]): Promise<any[]> {
         .single()
 
       if (newBiz) {
+        // Kick off site generation so the user finds a site when they return
+        await triggerGeneration(newBiz.id)
+
         insertedResults.push({
           id: newBiz.id,
           name: r.name,
@@ -176,7 +197,7 @@ async function upsertLiveResults(liveResults: any[]): Promise<any[]> {
           phone: r.phone || '',
           address: r.address || '',
           slug,
-          website_status: null,
+          website_status: 'generating',
           source: r.source,
         })
       }

@@ -1,5 +1,8 @@
 import 'dotenv/config'
+import { assertHealthy } from '../utils/healthcheck.js'
 import { Worker, Queue } from 'bullmq'
+
+await assertHealthy()
 import { SiteGenerator } from '../generator/siteGenerator.js'
 import { generateFromTemplate } from '../generator/templateEngine.js'
 import { resolveCategory } from '../templates/categories.js'
