@@ -1,7 +1,10 @@
 import 'dotenv/config'
+import { assertHealthy } from './utils/healthcheck.js'
 import { startOutreachWorker } from './queue/worker.js'
 import { startFollowUpWorker } from './queue/followup-worker.js'
 import { attachQueueLogging } from './queue/queues.js'
+
+await assertHealthy()
 
 const outreachWorker = startOutreachWorker()
 const followUpWorker = startFollowUpWorker()

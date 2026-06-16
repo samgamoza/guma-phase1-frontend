@@ -2,7 +2,9 @@ import { Worker } from 'bullmq';
 import { createClient } from '@supabase/supabase-js';
 import { sendOutreachEmail } from '../email/sender.js';
 import { enqueueFollowUp } from './queues.js';
-import { updateOutreachStatus } from '../db/client.js';
+import { updateOutreachStatus, getSentTodayCount } from '../db/client.js';
+
+const DAILY_SEND_LIMIT = parseInt(process.env.DAILY_SEND_LIMIT || '200', 10);
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -83,6 +85,14 @@ export function startOutreachWorker() {
         console.warn(`Business "${business.name}" has no email. Skipping outreach.`);
         await updateOutreachStatus(outreachId, 'failed');
         return;
+      }
+
+      // Enforce daily send cap to protect email reputation
+      const sentToday = await getSentTodayCount();
+      if (sentToday >= DAILY_SEND_LIMIT) {
+        console.warn(`Daily send limit reached (${sentToday}/${DAILY_SEND_LIMIT}). Releasing job back to queue.`);
+        // Throw so BullMQ retries later (next day workers will pick it up)
+        throw new Error(`DAILY_LIMIT_REACHED: ${sentToday}/${DAILY_SEND_LIMIT}`);
       }
 
       const rating = business.raw_data?.rating;
