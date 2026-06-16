@@ -12,21 +12,23 @@ export async function POST(request: NextRequest) {
   const { slug } = await request.json()
   if (!slug) return NextResponse.json({ error: 'Missing slug' }, { status: 400 })
 
-  // Check site exists and isn't already claimed by someone else
+  // Resolve site id from slug first
   const { data: site } = await supabase
     .from('websites')
-    .select('id, status, claimed_by')
+    .select('id, claimed_by')
     .eq('slug', slug)
     .single()
 
   if (!site) return NextResponse.json({ error: 'Site not found' }, { status: 404 })
 
-  if (site.claimed_by && site.claimed_by !== user.id) {
-    return NextResponse.json({ error: 'Already claimed by another user' }, { status: 409 })
+  // Already claimed by this user — idempotent success
+  if (site.claimed_by === user.id) {
+    return NextResponse.json({ success: true, websiteId: site.id })
   }
 
-  // Claim it
-  const { error } = await supabase
+  // Atomic claim: UPDATE ... WHERE claimed_by IS NULL
+  // If two requests race, only one will match this condition — the other gets 0 rows.
+  const { data: claimed, error } = await supabase
     .from('websites')
     .update({
       claimed_by: user.id,
@@ -34,16 +36,24 @@ export async function POST(request: NextRequest) {
       published_at: new Date().toISOString(),
     })
     .eq('id', site.id)
+    .is('claimed_by', null)   // only succeeds if still unclaimed
+    .select('id')
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  // Update outreach record
+  if (!claimed || claimed.length === 0) {
+    // Another request won the race
+    return NextResponse.json({ error: 'Already claimed by another user' }, { status: 409 })
+  }
+
+  // Stop any pending follow-up emails for this site
   await supabase
     .from('outreach')
     .update({ status: 'claimed' })
     .eq('website_id', site.id)
+    .in('status', ['pending', 'sent'])   // don't touch already-failed records
 
   return NextResponse.json({ success: true, websiteId: site.id })
 }
