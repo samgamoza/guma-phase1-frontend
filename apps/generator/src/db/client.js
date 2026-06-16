@@ -1,5 +1,16 @@
 import { createClient } from '@supabase/supabase-js'
+import { Queue } from 'bullmq'
 import { logger } from '../utils/logger.js'
+
+const outreachQueue = new Queue('guma-outreach', {
+  connection: { url: process.env.REDIS_URL || 'redis://localhost:6379' },
+  defaultJobOptions: {
+    attempts: 3,
+    backoff: { type: 'exponential', delay: 30_000 },
+    removeOnComplete: { count: 500 },
+    removeOnFail: { count: 200 },
+  },
+})
 
 let _client = null
 
@@ -88,12 +99,23 @@ export async function websiteExistsForBusiness(businessId) {
   return (count || 0) > 0
 }
 
-/** Enqueue outreach after a site is generated */
+/** Insert an outreach record and enqueue it for sending */
 export async function enqueueOutreach(businessId, websiteId) {
-  const { error } = await getSupabase().from('outreach').insert({
-    business_id: businessId,
-    website_id: websiteId,
-    status: 'pending',
-  })
-  if (error) logger.warn('Failed to enqueue outreach', { error: error.message })
+  const { data, error } = await getSupabase()
+    .from('outreach')
+    .insert({ business_id: businessId, website_id: websiteId, status: 'pending' })
+    .select('id')
+    .single()
+
+  if (error || !data) {
+    logger.warn('Failed to create outreach record', { error: error?.message })
+    return
+  }
+
+  await outreachQueue.add(
+    `outreach:${data.id}`,
+    { outreachId: data.id },
+    { jobId: `outreach-${data.id}` }
+  )
+  logger.info(`Outreach queued for website ${websiteId} (record: ${data.id})`)
 }
