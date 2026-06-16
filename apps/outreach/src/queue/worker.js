@@ -2,54 +2,98 @@ import { Worker } from 'bullmq';
 import { createClient } from '@supabase/supabase-js';
 import { sendOutreachEmail } from '../email/sender.js';
 import { enqueueFollowUp } from './queues.js';
+import { updateOutreachStatus } from '../db/client.js';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_KEY
 );
 
+function calculateLeadScore(business) {
+  let score = 0;
+  const rd = business.raw_data || {};
+  const reviews = parseInt(rd.review_count || 0);
+  if (reviews >= 200) score += 40;
+  else if (reviews >= 100) score += 30;
+  else if (reviews >= 20) score += 15;
+
+  const rating = parseFloat(rd.rating || 0);
+  if (rating >= 4.5) score += 20;
+  else if (rating >= 4.0) score += 10;
+
+  if (business.email) score += 20;
+  if (business.phone) score += 10;
+
+  const hasSocial = rd.social_links && Object.keys(rd.social_links).length > 0;
+  const hasServices = rd.services && rd.services.length > 0;
+  if (hasSocial) score += 5;
+  if (hasServices) score += 5;
+
+  return Math.min(100, score);
+}
+
 /**
  * startOutreachWorker()
  * 
- * Consumes 'guma:outreach' jobs.
- * Expected data: { businessId, publicUrl }
+ * Consumes 'guma-outreach' jobs.
+ * Expected data: { outreachId }
  */
 export function startOutreachWorker() {
   const worker = new Worker(
-    'guma:outreach',
+    'guma-outreach',
     async (job) => {
-      const { businessId, publicUrl } = job.data;
-
-      // 1. Fetch the business to get the name and email address
-      const { data: business, error: busError } = await supabase
-        .from('businesses')
-        .select(`
-          name, 
-          email, 
-          raw_data,
-          websites (
-            lead_score
-          )
-        `)
-        .eq('id', businessId)
-        .single();
-
-      if (busError || !business) {
-        throw new Error(`Business ${businessId} not found: ${busError?.message}`);
+      const { outreachId } = job.data;
+      if (!outreachId) {
+        throw new Error('Outreach worker job missing outreachId');
       }
 
-      if (!business.email) {
+      // 1. Fetch the outreach record, business, and website
+      const { data: outreach, error: outError } = await supabase
+        .from('outreach')
+        .select(`
+          id,
+          to_email,
+          businesses (
+            id,
+            name,
+            email,
+            raw_data
+          ),
+          websites (
+            id,
+            slug
+          )
+        `)
+        .eq('id', outreachId)
+        .single();
+
+      if (outError || !outreach) {
+        throw new Error(`Outreach record ${outreachId} not found: ${outError?.message}`);
+      }
+
+      const business = outreach.businesses;
+      const website = outreach.websites;
+
+      if (!business) {
+        throw new Error(`Business not found for outreach record ${outreachId}`);
+      }
+
+      const targetEmail = outreach.to_email || business.email;
+      if (!targetEmail) {
         console.warn(`Business "${business.name}" has no email. Skipping outreach.`);
+        await updateOutreachStatus(outreachId, 'failed');
         return;
       }
 
       const rating = business.raw_data?.rating;
-      const leadScore = business.websites?.[0]?.lead_score || 0;
+      const leadScore = calculateLeadScore(business);
+      const siteBase = process.env.SITE_BASE_URL || 'https://guma.ai';
+      const publicUrl = website?.slug ? `${siteBase}/sites/${website.slug}` : '';
 
-      // 2. Send the email using Resend and the Supabase Storage URL
+      // 2. Send the email using Resend
       try {
         await sendOutreachEmail({
-          to: business.email,
+          to: targetEmail,
           businessName: business.name,
           previewUrl: publicUrl,
           rating,
@@ -57,16 +101,14 @@ export function startOutreachWorker() {
         });
 
         // 3. Mark outreach as sent in the database
-        await supabase
-          .from('websites')
-          .update({ outreach_sent_at: new Date().toISOString() })
-          .eq('business_id', businessId);
+        await updateOutreachStatus(outreachId, 'sent');
 
         // 4. Schedule the 72h follow-up
-        await enqueueFollowUp(businessId);
+        await enqueueFollowUp(outreachId);
 
       } catch (err) {
-        console.error(`Failed to send outreach to ${business.email}:`, err.message);
+        console.error(`Failed to send outreach to ${targetEmail}:`, err.message);
+        await updateOutreachStatus(outreachId, 'failed');
         throw err; // Re-throw to trigger BullMQ retry logic
       }
     },
