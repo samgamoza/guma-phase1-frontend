@@ -1,6 +1,6 @@
 # Guma AI — local development stack
 # Runs: crawler + generator + outreach workers + Redis
-# Frontend runs separately via: cd guma-frontend && npm run dev
+# Frontend runs separately via: cd apps/frontend && pnpm dev
 
 services:
 
@@ -19,18 +19,18 @@ services:
 
   crawler-worker:
     build:
-      context: ./guma-phase1-crawler
+      context: ./apps/crawler
       dockerfile: Dockerfile
     restart: unless-stopped
     command: node src/queue/worker.js
     depends_on:
       redis:
         condition: service_healthy
-    env_file: ./guma-phase1-crawler/.env
+    env_file: ./apps/crawler/.env
     environment:
       - REDIS_URL=redis://redis:6379
     volumes:
-      - ./guma-phase1-crawler/logs:/app/logs
+      - ./apps/crawler/logs:/app/logs
     deploy:
       resources:
         limits:
@@ -38,33 +38,33 @@ services:
 
   generator-worker:
     build:
-      context: ./guma-phase1-generator
+      context: ./apps/generator
       dockerfile: Dockerfile
     restart: unless-stopped
     command: node src/queue/worker.js
     depends_on:
       redis:
         condition: service_healthy
-    env_file: ./guma-phase1-generator/.env
+    env_file: ./apps/generator/.env
     environment:
       - REDIS_URL=redis://redis:6379
     volumes:
-      - ./guma-phase1-generator/logs:/app/logs
+      - ./apps/generator/logs:/app/logs
 
   outreach-worker:
     build:
-      context: ./guma-phase1-outreach
+      context: ./apps/outreach
       dockerfile: Dockerfile
     restart: unless-stopped
-    command: node src/queue/worker.js
+    command: node src/index.js
     depends_on:
       redis:
         condition: service_healthy
-    env_file: ./guma-phase1-outreach/.env
+    env_file: ./apps/outreach/.env
     environment:
       - REDIS_URL=redis://redis:6379
     volumes:
-      - ./guma-phase1-outreach/logs:/app/logs
+      - ./apps/outreach/logs:/app/logs
 
   # Optional: BullMQ dashboard for queue monitoring
   bull-board:
