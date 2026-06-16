@@ -7,42 +7,70 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SER
 
 export function startFollowUpWorker() {
   return new Worker('guma-followup', async (job) => {
-    const { outreachId } = job.data; // outreachId is the businessId here
+    const { outreachId } = job.data;
+    if (!outreachId) {
+      throw new Error('Follow-up worker job missing outreachId');
+    }
 
-    // 1. Fetch business status and storage URL
-    const { data: business, error } = await supabase
-      .from('businesses')
-      .select('name, email, is_claimed, websites(public_url)')
+    // 1. Fetch outreach record, business, and website
+    const { data: outreach, error } = await supabase
+      .from('outreach')
+      .select(`
+        id,
+        to_email,
+        status,
+        businesses (
+          name,
+          email
+        ),
+        websites (
+          slug,
+          claimed_by,
+          status
+        )
+      `)
       .eq('id', outreachId)
       .single();
 
-    if (error || !business) {
-      throw new Error(`Follow-up: Business ${outreachId} not found`);
+    if (error || !outreach) {
+      throw new Error(`Follow-up: Outreach record ${outreachId} not found`);
+    }
+
+    const business = outreach.businesses;
+    const website = outreach.websites;
+
+    if (!business) {
+      throw new Error(`Business not found for outreach record ${outreachId}`);
     }
 
     // 2. BREAKPOINT: If already claimed, do nothing
-    if (business.is_claimed) {
-      logger.info(`Business "${business.name}" already claimed. Skipping follow-up.`);
+    const isClaimed = website?.claimed_by || website?.status === 'claimed' || website?.status === 'published' || outreach.status === 'claimed';
+    if (isClaimed) {
+      logger.info(`Outreach "${outreachId}" already claimed. Skipping follow-up.`);
       return;
     }
 
-    const publicUrl = business.websites?.[0]?.public_url;
-    if (!publicUrl) {
-      logger.warn(`No website found for ${business.name}. Cannot follow up.`);
+    const targetEmail = outreach.to_email || business.email;
+    const slug = website?.slug;
+    if (!targetEmail || !slug) {
+      logger.warn(`No email or website slug found for outreach ${outreachId}. Cannot follow up.`);
       return;
     }
+
+    const siteBase = process.env.SITE_BASE_URL || 'https://guma.ai';
+    const publicUrl = `${siteBase}/sites/${slug}`;
 
     // 3. Send the follow-up
     try {
       await sendFollowUpEmail({
-        to: business.email,
+        to: targetEmail,
         businessName: business.name,
         previewUrl: publicUrl,
       });
       
-      logger.info(`Follow-up sent successfully to ${business.email}`);
+      logger.info(`Follow-up sent successfully to ${targetEmail}`);
     } catch (err) {
-      logger.error(`Follow-up failed for ${business.email}`, err);
+      logger.error(`Follow-up failed for ${targetEmail}`, err);
       throw err;
     }
   }, {
