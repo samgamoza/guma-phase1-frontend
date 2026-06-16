@@ -1,9 +1,9 @@
-import { createClient } from '@supabase/supabase-js'
 import Redis from 'ioredis'
 
 export async function assertHealthy() {
   const errors = []
 
+  // Check Redis
   const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379'
   try {
     const redis = new Redis(redisUrl, { lazyConnect: true, connectTimeout: 5000 })
@@ -14,15 +14,21 @@ export async function assertHealthy() {
     errors.push(`Redis unreachable at ${redisUrl}: ${err.message}`)
   }
 
+  // Check Supabase via REST (no WebSocket needed)
   const supabaseUrl = process.env.SUPABASE_URL
   const supabaseKey = process.env.SUPABASE_SERVICE_KEY
   if (!supabaseUrl || !supabaseKey) {
     errors.push('Missing SUPABASE_URL or SUPABASE_SERVICE_KEY')
   } else {
     try {
-      const db = createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false } })
-      const { error } = await db.from('businesses').select('id', { count: 'exact', head: true })
-      if (error) errors.push(`Supabase query failed: ${error.message}`)
+      const res = await fetch(`${supabaseUrl}/rest/v1/businesses?select=id&limit=1`, {
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${supabaseKey}`,
+        },
+        signal: AbortSignal.timeout(5000),
+      })
+      if (!res.ok) errors.push(`Supabase REST returned ${res.status}`)
     } catch (err) {
       errors.push(`Supabase unreachable: ${err.message}`)
     }
