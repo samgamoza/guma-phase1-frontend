@@ -1,58 +1,84 @@
-# Guma AI — Next.js 14 Frontend
+# Guma Phase 1 — Monorepo
 
-Full-stack Next.js App Router frontend covering the entire Guma AI user journey:
-marketing → search → claim → dashboard → upgrade.
+> Auto-generate free websites for local businesses, deliver them via cold email, convert owners to paying subscribers.
 
-## Pages & routes
+---
 
-| Route | Description |
+## Structure
+
+```
+apps/
+├── crawler/     Node.js — scrapes business listings (YellowPages, Google Places, Apify, Bright Data)
+├── generator/   Node.js — generates HTML websites via Claude API + BullMQ
+├── outreach/    Node.js — sends personalised cold emails via Resend + BullMQ follow-ups
+└── frontend/    Next.js 14 — marketing site, claim flow, dashboard, admin panel
+```
+
+---
+
+## How it works
+
+```
+Directories (YellowPages, Yelp, …)
+        │
+        ▼
+  apps/crawler          Playwright + BullMQ
+  scrape() ──► businesses table (Supabase)
+  filter() ──► guma:generate queue
+        │
+        ▼
+  apps/generator        Claude API + BullMQ
+  generate() ──► websites table (HTML stored in Supabase)
+  publish()  ──► guma:outreach queue
+        │
+        ▼
+  apps/outreach         Resend + BullMQ
+  send()     ──► personalised cold email → business owner
+  followup() ──► +72h follow-up if opened but not claimed
+        │
+        ▼
+  apps/frontend         Next.js 14 on Vercel
+  /                     Marketing
+  /claim/[slug]         Preview + verify + claim
+  /sites/[slug]         Live generated site (public)
+  /dashboard            User overview + site editor
+  /admin                Platform metrics (admin only)
+```
+
+---
+
+## Local dev
+
+**Prerequisites:** Node 20+, pnpm 9+, Redis, Docker (optional)
+
+```bash
+# Install all workspace dependencies
+pnpm install
+
+# Run individual services
+pnpm dev:crawler
+pnpm dev:generator
+pnpm dev:outreach
+
+# Run frontend
+cd apps/frontend && pnpm dev
+
+# Run everything via Docker
+docker-compose up
+```
+
+Copy each app's `.env.example` to `.env` and fill in the required values before starting.
+
+---
+
+## Environment variables
+
+Each app has its own `.env.example`. Key shared variables:
+
+| Variable | Used by |
 |---|---|
-| `/` | Marketing homepage — hero, how it works, pricing |
-| `/auth/signup` | Business search + claim entry point |
-| `/auth/login` | Magic link sign-in |
-| `/auth/callback` | Supabase OAuth callback handler |
-| `/claim/[slug]` | Site preview + claim form |
-| `/sites/[slug]` | Public site viewer (serves generated HTML) |
-| `/dashboard` | User overview — sites, views, plan |
-| `/dashboard/upgrade` | Pricing + Stripe checkout |
-
-## API routes
-
-| Route | Method | Purpose |
-|---|---|---|
-| `/api/sites/search` | GET | Search crawled businesses by name+city |
-| `/api/sites/[slug]` | GET | Get site metadata for claim page |
-| `/api/claim` | POST | Mark a site as claimed by authed user |
-| `/api/billing/checkout` | POST | Create Stripe checkout session |
-| `/api/webhooks/stripe` | POST | Handle Stripe subscription events |
-
-## Setup
-
-```bash
-cp .env.example .env.local
-# fill in Supabase + Stripe keys
-npm install
-npm run dev
-```
-
-## Key design decisions
-
-- **Magic link auth only** — no passwords. Business owners are non-technical;
-  email OTP is the lowest-friction auth flow.
-- **Claim banner on every generated site** — every free site has a dismissible
-  banner with a claim CTA; the iframe on `/claim/[slug]` shows the real site.
-- **Stripe checkout (hosted)** — no custom payment UI needed; Stripe handles
-  PCI compliance, 3DS, card vaulting. Webhook updates the DB plan on success.
-- **dangerouslySetInnerHTML for site viewer** — generated HTML is Claude output
-  stored in DB; it's served directly so business owners see an accurate preview.
-  Sanitise if adding user-editable HTML in future.
-
-## Deploy to Vercel
-
-```bash
-vercel
-# Set all env vars in Vercel dashboard
-# Add STRIPE_WEBHOOK_SECRET after creating webhook endpoint in Stripe dashboard:
-# Endpoint URL: https://your-domain.vercel.app/api/webhooks/stripe
-# Events: checkout.session.completed, customer.subscription.deleted
-```
+| `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` | crawler, generator, outreach, frontend |
+| `ANTHROPIC_API_KEY` | generator |
+| `RESEND_API_KEY` | outreach |
+| `REDIS_URL` | crawler, generator, outreach |
+| `STRIPE_SECRET_KEY` | frontend |
