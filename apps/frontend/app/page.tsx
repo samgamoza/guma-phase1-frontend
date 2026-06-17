@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import {
   Zap, ArrowRight, CheckCircle2, Globe, Search,
   Star, Shield, Smartphone, Check, TrendingUp,
@@ -215,11 +216,15 @@ export default function LandingPage() {
       {/* Navigation */}
       <header className="border-b border-white/5 bg-zinc-950/50 backdrop-blur-xl sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-indigo flex items-center justify-center shadow-lg shadow-indigo/30">
-              <Zap size={15} className="text-white" />
-            </div>
-            <span className="font-extrabold text-xl tracking-tight text-white">GUMA <span className="text-indigo-light font-medium text-sm">AI</span></span>
+          <Link href="/" className="flex items-center">
+            <Image
+              src="/guma-logo.png"
+              alt="Guma AI"
+              width={1054}
+              height={262}
+              priority
+              className="h-9 w-auto"
+            />
           </Link>
 
           <nav className="hidden md:flex items-center gap-8 text-sm font-semibold text-zinc-400">
@@ -875,10 +880,13 @@ export default function LandingPage() {
       <footer className="border-t border-white/5 bg-[#080910] py-12 px-6">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6 text-xs text-zinc-500">
           <div className="flex items-center gap-3">
-            <div className="w-6 h-6 rounded-lg bg-indigo flex items-center justify-center">
-              <Zap size={12} className="text-white" />
-            </div>
-            <span className="font-extrabold text-base tracking-tight text-white">GUMA <span className="text-indigo-light font-medium text-xs">AI</span></span>
+            <Image
+              src="/guma-logo.png"
+              alt="Guma AI"
+              width={1054}
+              height={262}
+              className="h-6 w-auto"
+            />
             <span className="text-zinc-700">|</span>
             <span>© {new Date().getFullYear()} Guma AI. All rights reserved.</span>
           </div>
