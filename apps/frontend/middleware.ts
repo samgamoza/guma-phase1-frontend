@@ -45,6 +45,9 @@ export async function middleware(req: NextRequest) {
     '/auth/signup',
     '/auth/signup/manual',
     '/auth/callback',
+    '/auth/confirm',
+    '/start',
+    '/for',
     '/claim/[slug]', // Allow access to claim page
     '/sites/[slug]', // Allow previewing generated websites publicly
     '/api/webhooks/stripe', // Stripe webhook should be public
@@ -53,14 +56,15 @@ export async function middleware(req: NextRequest) {
     '/api/auth/send-magic-link', // Allow generating/sending magic links publicly
   ]
 
+  const pathname = req.nextUrl.pathname
+
   // Check if the current path is a public path
   const isPublicPath = publicPaths.some(path => {
-    // Basic path matching, can be enhanced with regex for dynamic segments
     if (path.includes('[slug]')) {
-      const regex = new RegExp(`^${path.replace(/\[slug\]/g, '[^/]+')}$`)
-      return regex.test(req.nextUrl.pathname)
+      const regex = new RegExp(`^${path.replace(/\[slug\]/g, '[^/]+')}(/.*)?$`)
+      return regex.test(pathname)
     }
-    return req.nextUrl.pathname === path
+    return pathname === path || pathname.startsWith(path + '/')
   })
 
   // If the user is trying to access a protected route and is not authenticated, redirect to login
