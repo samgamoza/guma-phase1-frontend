@@ -143,14 +143,16 @@ const SWEEP_INTERVAL_MS = parseInt(process.env.GENERATE_SWEEP_MS || '60000', 10)
 async function reconcileMissingSites() {
   try {
     const ids = await getBusinessesWithoutSites(50)
+    console.log(`[sweep] found ${ids.length} business(es) without a site`)
     if (!ids.length) return
     for (const id of ids) await enqueueGenerateJob(id)
-    logger.info(`Reconciliation sweep enqueued ${ids.length} missing site(s)`)
+    console.log(`[sweep] enqueued ${ids.length} generate job(s)`)
   } catch (err) {
-    logger.error('Reconciliation sweep failed', { error: err.message })
+    console.error('[sweep] FAILED:', err?.message, err?.stack)
   }
 }
 
+console.log(`[startup] generator worker online — sweep every ${SWEEP_INTERVAL_MS}ms`)
 reconcileMissingSites()
 const sweepTimer = setInterval(reconcileMissingSites, SWEEP_INTERVAL_MS)
 
