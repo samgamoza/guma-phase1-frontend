@@ -49,6 +49,8 @@ function ManualSignupContent() {
   const [phone, setPhone] = useState(phoneParam)
   const [hours, setHours] = useState('Mon–Fri: 9am–5pm · Sat: 10am–3pm · Sun: Closed')
   const [services, setServices] = useState('')
+  const [tagline, setTagline] = useState('')
+  const [facebook, setFacebook] = useState('')
 
   const totalSteps = 3
 
@@ -119,7 +121,7 @@ function ManualSignupContent() {
       const res = await fetch('/api/sites/create-manual', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, category, city, address, phone, hours, services }),
+        body: JSON.stringify({ name, category, city, address, phone, hours, services, tagline, facebook }),
       })
 
       const data = await res.json()
@@ -254,8 +256,8 @@ function ManualSignupContent() {
         {step === 1 && (
           <div className="space-y-5">
             <div>
-              <h1 className="text-2xl font-bold text-ink mb-1">Basic details</h1>
-              <p className="text-warm-gray-500 text-sm">What's your business name and type?</p>
+              <h1 className="text-2xl font-bold text-ink mb-1">Tell us about your business</h1>
+              <p className="text-warm-gray-500 text-sm">We'll build your website from this — takes 60 seconds.</p>
             </div>
 
             <div>
@@ -267,6 +269,19 @@ function ManualSignupContent() {
                 className="input"
                 autoFocus
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-ink mb-1.5">
+                Your one-liner <span className="text-warm-gray-400 font-normal">(what makes you special?)</span>
+              </label>
+              <input
+                value={tagline}
+                onChange={e => setTagline(e.target.value)}
+                placeholder="e.g. Best sinigang in Quezon City since 1998"
+                className="input"
+              />
+              <p className="text-xs text-warm-gray-400 mt-1">This becomes your headline. Write it like you'd say it to a customer.</p>
             </div>
 
             <div>
@@ -341,6 +356,19 @@ function ManualSignupContent() {
                 className="input"
               />
             </div>
+
+            <div>
+              <label className="block text-sm font-medium text-ink mb-1.5">
+                Facebook Page <span className="text-warm-gray-400 font-normal">(optional)</span>
+              </label>
+              <input
+                value={facebook}
+                onChange={e => setFacebook(e.target.value)}
+                placeholder="e.g. facebook.com/yourpage or paste your FB page URL"
+                className="input"
+              />
+              <p className="text-xs text-warm-gray-400 mt-1">We'll add a link to your Facebook page on your website.</p>
+            </div>
           </div>
         )}
 
@@ -369,9 +397,11 @@ function ManualSignupContent() {
               <p className="text-xs font-bold text-indigo uppercase tracking-wider mb-2">Site Preview Summary</p>
               <div className="text-xs text-warm-gray-600 space-y-1">
                 <p><span className="font-semibold text-ink">Name:</span> {name || '—'}</p>
+                {tagline && <p><span className="font-semibold text-ink">Tagline:</span> {tagline}</p>}
                 <p><span className="font-semibold text-ink">Category:</span> {CATEGORIES.find(c => c.value === category)?.label}</p>
                 <p><span className="font-semibold text-ink">Location:</span> {city || '—'}{address ? `, ${address}` : ''}</p>
                 {phone && <p><span className="font-semibold text-ink">Phone:</span> {phone}</p>}
+                {facebook && <p><span className="font-semibold text-ink">Facebook:</span> {facebook}</p>}
               </div>
             </div>
 

@@ -120,7 +120,7 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await serverSupabase.auth.getUser()
 
     const body = await req.json()
-    const { name, category, city, country = 'US', address, phone, hours, services } = body
+    const { name, category, city, country = 'PH', address, phone, hours, services, tagline: ownerTagline, facebook } = body
 
     if (!name || !category || !city) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -163,8 +163,10 @@ export async function POST(req: NextRequest) {
 
     // Resolve description & details
     const categoryLabel = CATEGORY_LABELS[category] || 'Local Business'
-    const description = `${name} is a premier ${categoryLabel.toLowerCase()} serving ${city} and surrounding areas.`
-    const tagline = CATEGORY_TAGLINES[category] || 'Welcome to our business'
+    const description = ownerTagline
+      ? `${ownerTagline} — ${name} serves ${city} and surrounding areas.`
+      : `${name} is a premier ${categoryLabel.toLowerCase()} serving ${city} and surrounding areas.`
+    const tagline = ownerTagline || CATEGORY_TAGLINES[category] || 'Welcome to our business'
 
     // Format services as HTML list
     const parsedServices = Array.isArray(services) 
@@ -219,6 +221,7 @@ export async function POST(req: NextRequest) {
       PRIMARY_CTA:        CATEGORY_CTAS[category] || 'Contact Us',
       SECONDARY_CTA:      'Learn More',
       ICON:               '🏢',
+      FACEBOOK_URL:       facebook || '',
     }
 
     // Replace all {{PLACEHOLDER}}
@@ -248,6 +251,8 @@ export async function POST(req: NextRequest) {
         raw_data: {
           services: parsedServices,
           hours: hours,
+          tagline: ownerTagline || null,
+          facebook: facebook || null,
           source: 'manual',
         }
       })
