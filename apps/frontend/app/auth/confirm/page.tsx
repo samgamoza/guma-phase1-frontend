@@ -30,7 +30,25 @@ function ConfirmContent() {
     async function handleHashSession() {
       const supabase = createClient()
 
-      // Parse hash fragment: #access_token=...&refresh_token=...&type=...
+      // ── Preferred flow: token_hash verification (query param, survives redirects)
+      const tokenHash = searchParams.get('token_hash')
+      const otpType = searchParams.get('type')
+      if (tokenHash) {
+        const { error } = await supabase.auth.verifyOtp({
+          token_hash: tokenHash,
+          type: (otpType as any) || 'magiclink',
+        })
+        if (error) {
+          setStatus('error')
+          setErrorMsg(error.message)
+        } else {
+          setStatus('success')
+          setTimeout(() => router.replace(next), 800)
+        }
+        return
+      }
+
+      // ── Fallback: implicit hash fragment (#access_token=...&refresh_token=...)
       const hash = window.location.hash.substring(1) // strip leading #
       const params = new URLSearchParams(hash)
 
@@ -79,7 +97,7 @@ function ConfirmContent() {
     }
 
     handleHashSession()
-  }, [next, router])
+  }, [next, router, searchParams])
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-cream px-4">

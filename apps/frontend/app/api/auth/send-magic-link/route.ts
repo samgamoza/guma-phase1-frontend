@@ -38,10 +38,28 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 400 })
     }
 
-    const actionLink = data?.properties?.action_link
-    if (!actionLink) {
+    // Build our own confirmation link using the token_hash verification flow.
+    // This avoids the fragile implicit (#access_token) hash-fragment flow that
+    // gets dropped across server redirects. /auth/confirm will call verifyOtp().
+    const tokenHash = data?.properties?.hashed_token
+    if (!tokenHash) {
       return NextResponse.json({ error: 'Could not generate login link' }, { status: 500 })
     }
+
+    // Extract origin + intended destination from the redirectTo the caller sent.
+    let origin = ''
+    let next = '/dashboard'
+    try {
+      const rt = new URL(redirectTo)
+      origin = rt.origin
+      next = rt.searchParams.get('next') || '/dashboard'
+    } catch {
+      origin = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') || ''
+    }
+
+    const actionLink =
+      `${origin}/auth/confirm?token_hash=${encodeURIComponent(tokenHash)}` +
+      `&type=magiclink&next=${encodeURIComponent(next)}`
 
     // 3. Send email via Resend API
     if (!resendApiKey) {
