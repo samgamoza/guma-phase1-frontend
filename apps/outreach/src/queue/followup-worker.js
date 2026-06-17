@@ -1,9 +1,7 @@
 import { Worker } from 'bullmq';
-import { createClient } from '@supabase/supabase-js';
 import { sendFollowUpEmail } from '../email/sender.js';
 import { logger } from '../utils/logger.js';
-
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+import { getSupabase } from '../db/client.js';
 
 export function startFollowUpWorker() {
   return new Worker('guma-followup', async (job) => {
@@ -13,7 +11,7 @@ export function startFollowUpWorker() {
     }
 
     // 1. Fetch outreach record, business, and website
-    const { data: outreach, error } = await supabase
+    const { data: outreach, error } = await getSupabase()
       .from('outreach')
       .select(`
         id,
