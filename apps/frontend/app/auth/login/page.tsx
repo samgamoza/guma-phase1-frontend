@@ -1,5 +1,6 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
 import { getSiteUrl } from '@/lib/site-url'
@@ -11,6 +12,15 @@ export default function LoginPage() {
   const [sent, setSent]       = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState<string | null>(null)
+  const router = useRouter()
+
+  // If Supabase redirected here with a hash token, hand off to /auth/confirm
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.hash.includes('access_token')) {
+      const next = new URLSearchParams(window.location.search).get('next') || '/dashboard'
+      router.replace(`/auth/confirm?next=${encodeURIComponent(next)}${window.location.hash}`)
+    }
+  }, [router])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
