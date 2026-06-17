@@ -11,7 +11,9 @@ import {
   upsertWebsite,
   enqueueOutreach,
   websiteExistsForBusiness,
+  getBusinessesWithoutSites,
 } from '../db/client.js'
+import { enqueueGenerateJob } from './queues.js'
 import { logger } from '../utils/logger.js'
 
 const CONCURRENCY = parseInt(process.env.GENERATE_CONCURRENCY || '5', 10)
@@ -133,12 +135,32 @@ worker.on('failed', (job, err) => {
 
 worker.on('error', (err) => logger.error('Worker error', { error: err.message }))
 
+// ── Reconciliation sweep ──────────────────────────────────────────────────────
+// Periodically enqueue generation for any business that still has no site.
+// Makes search→generation self-healing even if the real-time trigger never fires.
+const SWEEP_INTERVAL_MS = parseInt(process.env.GENERATE_SWEEP_MS || '60000', 10)
+
+async function reconcileMissingSites() {
+  try {
+    const ids = await getBusinessesWithoutSites(50)
+    if (!ids.length) return
+    for (const id of ids) await enqueueGenerateJob(id)
+    logger.info(`Reconciliation sweep enqueued ${ids.length} missing site(s)`)
+  } catch (err) {
+    logger.error('Reconciliation sweep failed', { error: err.message })
+  }
+}
+
+reconcileMissingSites()
+const sweepTimer = setInterval(reconcileMissingSites, SWEEP_INTERVAL_MS)
+
 async function shutdown() {
   logger.info('Shutting down generator worker...')
+  clearInterval(sweepTimer)
   await worker.close()
   process.exit(0)
 }
 process.on('SIGTERM', shutdown)
 process.on('SIGINT', shutdown)
 
-logger.info(`Generator worker started — concurrency: ${CONCURRENCY}, model: claude-sonnet-4-6`)
+logger.info(`Generator worker started — concurrency: ${CONCURRENCY}, sweep: ${SWEEP_INTERVAL_MS}ms`)

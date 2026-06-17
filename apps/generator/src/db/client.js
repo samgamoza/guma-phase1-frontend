@@ -89,6 +89,22 @@ export async function publishWebsite(slug) {
   if (error) throw error
 }
 
+/** Find businesses that have no website yet — used by the reconciliation sweep */
+export async function getBusinessesWithoutSites(limit = 50) {
+  const { data, error } = await getSupabase()
+    .from('businesses')
+    .select('id, websites(id)')
+    .order('id', { ascending: false })
+    .limit(limit)
+  if (error) {
+    logger.error('getBusinessesWithoutSites failed', { error: error.message })
+    return []
+  }
+  return (data || [])
+    .filter((b) => !b.websites || b.websites.length === 0)
+    .map((b) => b.id)
+}
+
 /** Check if a site already exists for a business — used to skip redundant generation */
 export async function websiteExistsForBusiness(businessId) {
   const { count } = await getSupabase()
