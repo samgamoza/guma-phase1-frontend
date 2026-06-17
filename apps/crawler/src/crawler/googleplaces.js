@@ -142,10 +142,11 @@ export class GooglePlacesScraper {
     const name = r.name?.trim()
     if (!name) return null
 
-    // Extract city/state from address_components for accuracy
-    const addrCity  = this._extractComponent(r.address_components, 'locality') || city
-    const addrState = this._extractComponent(r.address_components, 'administrative_area_level_1') || state
-    const zip       = this._extractComponent(r.address_components, 'postal_code') || ''
+    // Extract city/state/country from address_components for accuracy
+    const addrCity    = this._extractComponent(r.address_components, 'locality') || city
+    const addrState   = this._extractComponent(r.address_components, 'administrative_area_level_1') || state
+    const addrCountry = this._extractComponent(r.address_components, 'country') || null
+    const zip         = this._extractComponent(r.address_components, 'postal_code') || ''
 
     // Build hours string
     const hours = (r.opening_hours?.weekday_text || []).join(', ')
@@ -167,8 +168,9 @@ export class GooglePlacesScraper {
       hours,
       rating:       r.rating?.toString() || null,
       review_count: r.user_ratings_total || 0,
-      email:        null, // Google Places API doesn't return email
+      email:        null,
       place_id:     placeId,
+      country:      addrCountry,
     })
   }
 
@@ -190,7 +192,7 @@ export class GooglePlacesScraper {
       email:      raw.email,
       address:    raw.address,
       city:       raw.city,
-      country:    'US',
+      country:    raw.country || 'PH',
       source_url: `https://maps.google.com/?cid=${raw.place_id}`,
       source_dir: 'googleplaces',
       has_website: raw.has_website,

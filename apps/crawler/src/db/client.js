@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import ws from 'ws'
 import { logger } from '../utils/logger.js'
 
 let _client = null
@@ -8,7 +9,11 @@ export function getSupabase() {
     const url = process.env.SUPABASE_URL
     const key = process.env.SUPABASE_SERVICE_KEY
     if (!url || !key) throw new Error('Missing SUPABASE_URL or SUPABASE_SERVICE_KEY')
-    _client = createClient(url, key, { auth: { persistSession: false } })
+    _client = createClient(url, key, {
+      auth: { persistSession: false },
+      global: { fetch },
+      realtime: { transport: ws },
+    })
   }
   return _client
 }
