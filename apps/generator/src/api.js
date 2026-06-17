@@ -9,18 +9,14 @@
  */
 import 'dotenv/config'
 import http from 'node:http'
-import { createClient } from '@supabase/supabase-js'
 import { enqueueGenerateJob, outreachQueue } from './queue/queues.js'
+import { getSupabase } from './db/client.js'
 import { logger } from './utils/logger.js'
 
 const PORT   = process.env.PORT || process.env.GENERATOR_API_PORT || 3002
 const SECRET = process.env.ADMIN_API_SECRET   || ''
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY,
-  { auth: { persistSession: false } }
-)
+const supabase = getSupabase()
 
 function json(res, status, body) {
   const payload = JSON.stringify(body)
