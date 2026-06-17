@@ -132,6 +132,12 @@ export default function StartPage() {
             </Link>
           </div>
 
+          <div className="flex items-center justify-center gap-2 pt-1">
+            <Link href="/for" className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors underline underline-offset-2">
+              Browse by industry — restaurants, salons, clinics & more
+            </Link>
+          </div>
+
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 pt-2">
             {['100% free to start', 'No coding needed', 'Ready in 60 seconds', 'Works on mobile'].map(item => (
               <span key={item} className="flex items-center gap-1.5 text-xs font-semibold text-zinc-500">
@@ -265,6 +271,7 @@ export default function StartPage() {
           <span>© {new Date().getFullYear()} Guma AI. All rights reserved.</span>
           <div className="flex gap-6 text-zinc-500">
             <Link href="/" className="hover:text-white transition-colors">Home</Link>
+            <Link href="/for" className="hover:text-white transition-colors">Browse industries</Link>
             <Link href="/auth/signup" className="hover:text-white transition-colors">Search my business</Link>
             <Link href="/auth/login" className="hover:text-white transition-colors">Sign in</Link>
           </div>

@@ -230,12 +230,12 @@ export default function LandingPage() {
             <Image src="/guma-logo.png" alt="Guma AI" width={1054} height={262} priority className="h-9 w-auto" />
           </Link>
 
-          <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-zinc-400">
+          <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-zinc-400">
             <Link href="#how-it-works" className="hover:text-white transition-colors">How it works</Link>
-            <Link href="#examples" className="hover:text-white transition-colors">Examples</Link>
-            <Link href="#why" className="hover:text-white transition-colors">Why Guma</Link>
+            <Link href="/for" className="hover:text-white transition-colors">Industries</Link>
             <Link href="#pricing" className="hover:text-white transition-colors">Pricing</Link>
             <Link href="#faq" className="hover:text-white transition-colors">FAQ</Link>
+            <Link href="/start" className="hover:text-white transition-colors text-indigo-light/80">Build from scratch</Link>
           </nav>
 
           <div className="flex items-center gap-2">
@@ -305,6 +305,28 @@ export default function LandingPage() {
                   <Check size={13} className="text-emerald-400" /> {item}
                 </span>
               ))}
+            </div>
+          </Reveal>
+
+          <Reveal delay={260}>
+            <div className="flex items-center gap-4 justify-center pt-2">
+              <div className="h-px flex-1 max-w-[80px] bg-white/8" />
+              <span className="text-xs text-zinc-600 font-medium">or</span>
+              <div className="h-px flex-1 max-w-[80px] bg-white/8" />
+            </div>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+              <Link
+                href="/start"
+                className="text-sm font-semibold text-zinc-400 hover:text-white border border-white/10 hover:border-white/20 rounded-full px-5 py-2.5 transition-all flex items-center gap-2"
+              >
+                🏗️ Build your website from scratch
+              </Link>
+              <Link
+                href="/for"
+                className="text-sm font-semibold text-zinc-400 hover:text-white border border-white/10 hover:border-white/20 rounded-full px-5 py-2.5 transition-all flex items-center gap-2"
+              >
+                🗂️ Browse by industry
+              </Link>
             </div>
           </Reveal>
         </div>
